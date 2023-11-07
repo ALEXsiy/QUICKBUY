@@ -20,6 +20,7 @@ public class User implements UserDetails {
     private  Long id;
     @Column(name="email",unique = true)
     private String email;
+    private String activationCode;
     @Column(name="phoneName")
     private String phoneNumber;
     @Column(name="name")

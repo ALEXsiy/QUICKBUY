@@ -3,16 +3,13 @@ package com.baturin.QUICKbuy.services;
 import com.baturin.QUICKbuy.models.User;
 import com.baturin.QUICKbuy.models.enums.Role;
 import com.baturin.QUICKbuy.repositories.UserRepository;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,14 +19,28 @@ public class UserService {
     private UserRepository userRepository;
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private MailSenderService mailSenderService;
     public boolean createUser(User user){
         String email= user.getEmail();
         if(userRepository.findByEmail(email)!=null) return false;
-        user.setActive(true);
+        user.setActive(false);
+        user.setActivationCode(UUID.randomUUID().toString());
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.getRoles().add(Role.ROLE_USER);
         log.info("Saving new User with email: {}",email);
         userRepository.save(user);
+
+        if(!StringUtils.isEmpty(user.getEmail())){
+            String message= String.format(
+                    "Hello, %s!\n" +
+                            "Welcome to our shop. Please," +
+                            " visit next link: http://localhost:8082/activate/%s",
+                    user.getName(), user.getActivationCode()
+            );
+            mailSenderService.send(user.getEmail(), "Activation code",message);
+        }
+
         return true;
     }
 
@@ -66,4 +77,16 @@ public class UserService {
         }
         userRepository.save(user);
     }
+
+    public boolean activateUser(String code) {
+        User user=userRepository.findByActivationCode(code);
+        if(user==null) return false;
+        user.setActive(true);
+        user.setActivationCode(null);
+        userRepository.save(user);
+        return true;
+
+    }
+
+
 }

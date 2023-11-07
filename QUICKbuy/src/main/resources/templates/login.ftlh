@@ -5,6 +5,9 @@
 </head>
 <body>
 <h1>QUICKbuy</h1><hr>
+<#if message??>
+    <h2 style = "color: red">${message}</h2>
+</#if>
 <h4>Авторизация</h4>
 <form action="/login" method="post">
     Эл. почта: <input type="email" name="username"><br><br>
